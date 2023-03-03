@@ -56,6 +56,8 @@ int __MsgFunc_Fog(const char *pszName, int iSize, void *pbuf)
 	return gHUD.MsgFunc_Fog(pszName, iSize, pbuf);
 }
 
+
+// This is called every time the DLL is loaded
 void CHud::Init(void)
 {
 	HOOK_MESSAGE(SetFOV);
@@ -74,6 +76,8 @@ void CHud::Init(void)
 	HOOK_MESSAGE( Particle );
 	*/
 
+	//R_Init2();
+
 	//RENDERERS END
 }
 
@@ -91,12 +95,13 @@ void CHud::VidInit(void)
 	m_pSkyFogSettings.start = 0.0;
 	m_pSkyFogSettings.active = false;
 
-}
+	//R_VidInit();
 
+}
 
 CHud:: ~CHud()
 {
-
+	//R_Shutdown();
 }
 
 //RENDERERS START

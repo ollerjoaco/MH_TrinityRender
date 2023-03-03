@@ -275,7 +275,8 @@ void CMirrorManager::DrawMirrorPass( void )
 	// Draw world
 	gBSPRenderer.DrawNormalTriangles();
 
-	gBSPRenderer.SaveMultiTexture();
+	R_SaveGLStates();
+	RenderFog();
 
 	for(int i = 0; i < gBSPRenderer.m_iNumRenderEntities; i++)
 	{
@@ -303,7 +304,7 @@ void CMirrorManager::DrawMirrorPass( void )
 	// Draw particles
 	gParticleEngine.DrawParticles();
 
-	gBSPRenderer.RestoreMultiTexture();
+	R_RestoreGLStates();
 }
 
 /*
