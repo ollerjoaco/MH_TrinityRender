@@ -92,8 +92,6 @@ public:
 	void RestoreWorldDrawing(void);
 
 	void CreateTextures(void);
-	//void SaveMultiTexture(void);
-	//void RestoreMultiTexture(void);
 
 	void FreeBuffer(void);
 	void GenerateVertexArray(void);
@@ -336,28 +334,9 @@ public:
 	vec3_t				m_vDecalMins;
 	vec3_t				m_vDecalMaxs;
 
+public:
 	float				m_flLightScale;
 	bool				m_bFullBright;
-
-/*
-private:
-	GLint				m_iBlendActive;
-	GLint				m_iTU1bind;
-	GLint				m_iTU2bind;
-	GLint				m_iTU3bind;
-	GLint				m_iTU4bind;
-	GLint				m_iTU1tex2dEnable;
-	GLint				m_iTU2tex2dEnable;
-	GLint				m_iTU3tex2dEnable;
-	GLint				m_iTU4tex2dEnable;
-	GLint				m_iActiveTU;
-	GLint				m_iCLActiveTU;
-	GLint				m_iTU1BlendMode;
-
-	GLint				m_iAlphaFunc;
-	GLclampf			m_AlphaVal;
-	GLint				m_iAlphaTestEnabled;
-*/
 };
 extern CBSPRenderer gBSPRenderer;
 #endif

@@ -386,7 +386,7 @@ int IsEntityMoved(cl_entity_t *e)
 	if (e->angles[0] || e->angles[1] || e->angles[2] ||
 		e->origin[0] || e->origin[1] || e->origin[2] ||
 		e->curstate.renderfx == 70 ||
-		e->curstate.effects & FL_CONVEYOR || e-> curstate.frame > 0) // skybox models reques separate pass
+		e->curstate.effects & FL_CONVEYOR) // skybox models reques separate pass
 		return TRUE;
 	else
 		return FALSE;
@@ -1310,6 +1310,16 @@ void FixVectorForSpotlight(vec3_t &vec)
 	if (vec[ROLL] == -270) vec[ROLL] = -269;
 }
 
+void R_DisableSteamMSAA(void)
+{
+	// make sure we start with FBO / AA disabled
+	gEngfuncs.pfnClientCmd("_set_vid_level 1");
+	gEngfuncs.pfnClientCmd("_sethdmodels 0");
+	gEngfuncs.pfnClientCmd("gl_texturemode GL_LINEAR_MIPMAP_LINEAR");
+	gEngfuncs.pfnClientCmd("gl_round_down 0");
+	gEngfuncs.pfnClientCmd("_restart");
+}
+
 void R_SaveGLStates(void)
 {
 	glPushAttrib(GL_TEXTURE_BIT);
@@ -1357,7 +1367,7 @@ void R_RestoreGLStates(void)
 
 /*
 =================
-R_Init2
+R_Init
 =================
 */
 void R_Init2(void)

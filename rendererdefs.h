@@ -790,6 +790,7 @@ extern void		SV_FindTouchedLeafs( entextradata_t *ent, mnode_t *node );
 
 extern byte		*ResizeArray( byte *pOriginal, int iSize, int iCount );
 
+extern void		R_DisableSteamMSAA(void);
 extern void		R_SaveGLStates(void);
 extern void		R_RestoreGLStates(void);
 

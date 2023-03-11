@@ -74,12 +74,7 @@ void HUD_Init(void)
 	//gHUD.Init();
 
 	//RENDERERS START
-	gPropManager.Init();
-	gTextureLoader.Init();
-	gBSPRenderer.Init();
-	gParticleEngine.Init();
-	gWaterShader.Init();
-	gMirrorManager.Init();
+	R_Init2();
 	//RENDERERS_END
 
 	gExportfuncs.HUD_Init();
@@ -96,12 +91,7 @@ int HUD_VidInit(void)
 	gHUD.VidInit();
 
 	//RENDERERS START
-	gTextureLoader.VidInit();
-	gWaterShader.VidInit();
-	gBSPRenderer.VidInit();
-	gParticleEngine.VidInit();
-	gMirrorManager.VidInit();
-	g_StudioRenderer.VidInit();
+	R_VidInit();
 	//RENDERERS_END
 
 	return gExportfuncs.HUD_VidInit();
@@ -199,8 +189,7 @@ void HUD_ProcessPlayerState(struct entity_state_s *dst, const struct entity_stat
 
 void HUD_Shutdown(void)
 {
-	gTextureLoader.Shutdown();
-	gBSPRenderer.Shutdown();
+	R_Shutdown();
 
 	return gExportfuncs.HUD_Shutdown();
 }

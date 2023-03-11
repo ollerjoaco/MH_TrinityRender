@@ -3435,73 +3435,7 @@ StudioEstimateGait
 
 ====================
 */
-#if 0
-void CStudioModelRenderer::StudioEstimateGait(entity_state_t *pplayer)
-{
-	float dt;
-	vec3_t est_velocity;
 
-	dt = (m_clTime - m_clOldTime);
-	if (dt < 0)
-		dt = 0;
-	else if (dt > 1.0)
-		dt = 1;
-
-	if (dt == 0 || m_pPlayerInfo->renderframe == m_nFrameCount)
-	{
-		m_flGaitMovement = 0;
-		return;
-	}
-
-	// VectorAdd( pplayer->velocity, pplayer->prediction_error, est_velocity );
-	if (m_fGaitEstimation)
-	{
-		VectorSubtract(m_pCurrentEntity->origin, m_pPlayerInfo->prevgaitorigin, est_velocity);
-		VectorCopy(m_pCurrentEntity->origin, m_pPlayerInfo->prevgaitorigin);
-		m_flGaitMovement = Length(est_velocity);
-		if (dt <= 0 || m_flGaitMovement / dt < 5)
-		{
-			m_flGaitMovement = 0;
-			est_velocity[0] = 0;
-			est_velocity[1] = 0;
-		}
-	}
-	else
-	{
-		VectorCopy(pplayer->velocity, est_velocity);
-		m_flGaitMovement = Length(est_velocity) * dt;
-	}
-
-	if (est_velocity[1] == 0 && est_velocity[0] == 0)
-	{
-		float flYawDiff = m_pCurrentEntity->angles[YAW] - m_pPlayerInfo->gaityaw;
-		flYawDiff = flYawDiff - (int)(flYawDiff / 360) * 360;
-		if (flYawDiff > 180)
-			flYawDiff -= 360;
-		if (flYawDiff < -180)
-			flYawDiff += 360;
-
-		if (dt < 0.25)
-			flYawDiff *= dt * 4;
-		else
-			flYawDiff *= dt;
-
-		m_pPlayerInfo->gaityaw += flYawDiff;
-		m_pPlayerInfo->gaityaw = m_pPlayerInfo->gaityaw - (int)(m_pPlayerInfo->gaityaw / 360) * 360;
-
-		m_flGaitMovement = 0;
-	}
-	else
-	{
-		m_pPlayerInfo->gaityaw = (atan2(est_velocity[1], est_velocity[0]) * 180 / M_PI);
-		if (m_pPlayerInfo->gaityaw > 180)
-			m_pPlayerInfo->gaityaw = 180;
-		if (m_pPlayerInfo->gaityaw < -180)
-			m_pPlayerInfo->gaityaw = -180;
-	}
-
-}
-#endif
 void CStudioModelRenderer::StudioEstimateGait(entity_state_t *pplayer)
 {
 	float dt;
