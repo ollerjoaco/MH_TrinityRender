@@ -35,13 +35,6 @@ extern engine_studio_api_t IEngineStudio;
 
 cvar_s *cl_righthand = NULL;
 cvar_t *cl_lw = NULL;
-
-/*CBSPRenderer gBSPRenderer;
-CParticleEngine gParticleEngine;
-CWaterShader gWaterShader;
-CTextureLoader gTextureLoader;
-CPropManager gPropManager;
-CMirrorManager gMirrorManager;*/
 //RENDERERS END
 
 CHud gHUD;
@@ -51,20 +44,58 @@ int __MsgFunc_SetFOV(const char *pszName, int iSize, void *pbuf)
 	return gHUD.MsgFunc_SetFOV(pszName, iSize, pbuf);
 }
 
+/*
 int __MsgFunc_Fog(const char *pszName, int iSize, void *pbuf)
 {
 	return gHUD.MsgFunc_Fog(pszName, iSize, pbuf);
+}*/
+
+//RENDERERS START
+int __MsgFunc_SetFog(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_SetFog(pszName, iSize, pbuf);
 }
+int __MsgFunc_LightStyle(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_LightStyle(pszName, iSize, pbuf);
+}
+int __MsgFunc_CreateDecal(const char* pszName, int iSize, void* pbuf)
+{
+	return gBSPRenderer.MsgCustomDecal(pszName, iSize, pbuf);
+}
+int __MsgFunc_StudioDecal(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_StudioDecal(pszName, iSize, pbuf);
+}
+int __MsgFunc_SkyMark_S(const char* pszName, int iSize, void* pbuf)
+{
+	return gBSPRenderer.MsgSkyMarker_Sky(pszName, iSize, pbuf);
+}
+int __MsgFunc_SkyMark_W(const char* pszName, int iSize, void* pbuf)
+{
+	return gBSPRenderer.MsgSkyMarker_World(pszName, iSize, pbuf);
+}
+int __MsgFunc_DynLight(const char* pszName, int iSize, void* pbuf)
+{
+	return gBSPRenderer.MsgDynLight(pszName, iSize, pbuf);
+}
+int __MsgFunc_FreeEnt(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_FreeEnt(pszName, iSize, pbuf);
+}
+int __MsgFunc_Particle(const char* pszName, int iSize, void* pbuf)
+{
+	return gParticleEngine.MsgCreateSystem(pszName, iSize, pbuf);
+}
+//RENDERERS END
 
-
-// This is called every time the DLL is loaded
 void CHud::Init(void)
 {
 	HOOK_MESSAGE(SetFOV);
 
 	cl_righthand = gEngfuncs.pfnGetCvarPointer("cl_righthand");
 	//RENDERERS START
-	/*
+	
 	HOOK_MESSAGE( SetFog );
 	HOOK_MESSAGE( LightStyle );
 	HOOK_MESSAGE( CreateDecal );
@@ -74,14 +105,9 @@ void CHud::Init(void)
 	HOOK_MESSAGE( DynLight );
 	HOOK_MESSAGE( FreeEnt );
 	HOOK_MESSAGE( Particle );
-	*/
-
-	//R_Init2();
 
 	//RENDERERS END
 }
-
-
 
 void CHud::VidInit(void)
 {
@@ -94,14 +120,11 @@ void CHud::VidInit(void)
 	m_pSkyFogSettings.end = 0.0;
 	m_pSkyFogSettings.start = 0.0;
 	m_pSkyFogSettings.active = false;
-
-	//R_VidInit();
-
 }
+
 
 CHud:: ~CHud()
 {
-	//R_Shutdown();
 }
 
 //RENDERERS START
@@ -115,17 +138,19 @@ int CHud::Redraw(float flTime, int intermission)
 	m_flTime = flTime;
 	m_flTimeDelta = (double)m_flTime - m_fOldTime;
 
-	/*m_pFogSettings.active = true;
-	m_pFogSettings.color.x = m_pFogSettings.color.y = m_pFogSettings.color.z = 0;
+	/*
+	m_pFogSettings.active = false;
+	m_pFogSettings.color.x = m_pFogSettings.color.y = m_pFogSettings.color.z = 127;
 	m_pFogSettings.start = 200;
 	m_pFogSettings.end = 1000;
-	m_pFogSettings.affectsky = false;*/
+	m_pFogSettings.affectsky = false;
 
-	/*m_pSkyFogSettings.active = false;
-	m_pSkyFogSettings.color.x = m_pSkyFogSettings.color.y = m_pSkyFogSettings.color.z = 0;
+	m_pSkyFogSettings.active = false;
+	m_pSkyFogSettings.color.x = m_pSkyFogSettings.color.y = m_pSkyFogSettings.color.z = 127;
 	m_pSkyFogSettings.start = 200;
 	m_pSkyFogSettings.end = 1000;
-	m_pSkyFogSettings.affectsky = true;*/
+	m_pSkyFogSettings.affectsky = true;
+	*/
 
 	//RENDERERS START
 	HUD_PrintSpeeds();
@@ -150,17 +175,78 @@ int CHud::MsgFunc_SetFOV(const char *pszName, int iSize, void *pbuf)
 	return pmSetFOV(pszName, iSize, pbuf);
 }
 
-int CHud::MsgFunc_Fog(const char *pszName, int iSize, void *pbuf)
+//RENDERERS START
+int CHud::MsgFunc_SetFog(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	gHUD.m_pFogSettings.color.x = (float)READ_SHORT() / 255;
+	gHUD.m_pFogSettings.color.y = (float)READ_SHORT() / 255;
+	gHUD.m_pFogSettings.color.z = (float)READ_SHORT() / 255;
+	gHUD.m_pFogSettings.start = READ_SHORT();
+	gHUD.m_pFogSettings.end = READ_SHORT();
+	gHUD.m_pFogSettings.affectsky = (READ_SHORT() == 1) ? false : true;
+
+	if (gHUD.m_pFogSettings.end < 1 && gHUD.m_pFogSettings.start < 1)
+		gHUD.m_pFogSettings.active = false;
+	else
+		gHUD.m_pFogSettings.active = true;
+
+	return 1;
+}
+
+int CHud::MsgFunc_LightStyle(const char* pszName, int iSize, void* pbuf)
 {
 	BEGIN_READ(pbuf, iSize);
 
-	gHUD.m_pFogSettings.active = true;
-	gHUD.m_pFogSettings.color.x = (float)READ_BYTE() / 255;
-	gHUD.m_pFogSettings.color.y = (float)READ_BYTE() / 255;
-	gHUD.m_pFogSettings.color.z = (float)READ_BYTE() / 255;
-	gHUD.m_pFogSettings.start = 300;
-	gHUD.m_pFogSettings.end = 1500;
-	//gHUD.m_pFogSettings.affectsky = (READ_SHORT() == 1) ? false : true;
+	int m_iStyleNum = READ_BYTE();
+	char* szStyle = READ_STRING();
+	gBSPRenderer.AddLightStyle(m_iStyleNum, szStyle);
 
-	return pmFog(pszName, iSize, pbuf);
+	return 1;
 }
+
+int CHud::MsgFunc_StudioDecal(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+
+	vec3_t pos, normal;
+	pos.x = READ_COORD();
+	pos.y = READ_COORD();
+	pos.z = READ_COORD();
+	normal.x = READ_COORD();
+	normal.y = READ_COORD();
+	normal.z = READ_COORD();
+	int entindex = READ_SHORT();
+
+	if (!entindex)
+		return 1;
+
+	cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(entindex);
+
+	if (!pEntity)
+		return 1;
+
+	g_StudioRenderer.StudioDecalForEntity(pos, normal, READ_STRING(), pEntity);
+
+	return 1;
+}
+
+int CHud::MsgFunc_FreeEnt(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+
+	int iEntIndex = READ_SHORT();
+
+	if (!iEntIndex)
+		return 1;
+
+
+	cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(iEntIndex);
+
+	if (!pEntity)
+		return 1;
+
+	pEntity->efrag = NULL;
+	return 1;
+}
+//RENDERERS END

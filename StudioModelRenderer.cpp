@@ -37,10 +37,8 @@ Transparency code by Neil "Jed" Jedrzejewski
 #include "event_api.h"
 #include "pmtrace.h"
 
-#include <stdio.h>
 #include <string.h>
 #include <memory.h>
-//#include <math.h>
 
 #include "studio_util.h"
 #include "r_studioint.h"
@@ -1959,6 +1957,31 @@ CStudioModelRenderer::CStudioModelRenderer(void)
 */
 CStudioModelRenderer::~CStudioModelRenderer(void)
 {
+	if (m_iNumStudioModels > 0)
+	{
+		for (int i = 0; i < m_iNumStudioModels; i++)
+			delete m_pStudioModels[i].cache.data;
+	}
+
+	if (m_iNumStudioDecals)
+	{
+		for (int i = 0; i < m_iNumStudioDecals; i++)
+		{
+			if (m_pStudioDecals[i].numpolys)
+			{
+				for (int j = 0; j < m_pStudioDecals[i].numpolys; j++)
+					delete[] m_pStudioDecals[i].polys[j].verts;
+
+				delete[] m_pStudioDecals[i].polys;
+			}
+
+			if (m_pStudioDecals[i].numverts)
+				delete[] m_pStudioDecals[i].verts;
+		}
+
+		memset(m_pStudioDecals, NULL, sizeof(m_pStudioDecals));
+		m_iNumStudioDecals = NULL;
+	}
 }
 
 /*
@@ -2002,14 +2025,12 @@ void CStudioModelRenderer::StudioCalcBoneAdj(float dadt, float *adj, const byte 
 				if (value > 1.0) value = 1.0;
 				value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
-			// Con_DPrintf( "%d %d %f : %f\n", m_pCurrentEntity->curstate.controller[j], m_pCurrentEntity->latched.prevcontroller[j], value, dadt );
 		}
 		else
 		{
 			value = mouthopen / 64.0;
 			if (value > 1.0) value = 1.0;
 			value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
-			// Con_DPrintf("%d %f\n", mouthopen, value );
 		}
 		switch (pbonecontroller[j].type & STUDIO_TYPES)
 		{
@@ -2232,7 +2253,7 @@ mstudioanim_t *CStudioModelRenderer::StudioGetAnim(model_t *m_pSubModel, mstudio
 
 	if (paSequences == NULL)
 	{
-		paSequences = (cache_user_t *)IEngineStudio.Mem_Calloc(16, sizeof(cache_user_t));
+		paSequences = (cache_user_t *)IEngineStudio.Mem_Calloc(16, sizeof(cache_user_t));	// UNDONE: leak!
 		m_pSubModel->submodels = (dmodel_t *)paSequences;
 	}
 
@@ -2280,106 +2301,6 @@ StudioSetUpTransform
 
 ====================
 */
-#if 0
-void CStudioModelRenderer::StudioSetUpTransform(int trivial_accept)
-{
-	int				i;
-	vec3_t			angles;
-	vec3_t			modelpos;
-
-
-	VectorCopy(m_pCurrentEntity->origin, modelpos);
-
-	// TODO: should really be stored with the entity instead of being reconstructed
-	// TODO: should use a look-up table
-	// TODO: could cache lazily, stored in the entity
-	angles[ROLL] = m_pCurrentEntity->curstate.angles[ROLL];
-	angles[PITCH] = m_pCurrentEntity->curstate.angles[PITCH];
-	angles[YAW] = m_pCurrentEntity->curstate.angles[YAW];
-
-	//Con_DPrintf("Angles %4.2f prev %4.2f for %i\n", angles[PITCH], m_pCurrentEntity->index);
-	//Con_DPrintf("movetype %d %d\n", m_pCurrentEntity->movetype, m_pCurrentEntity->aiment );
-	if (m_pCurrentEntity->curstate.movetype == MOVETYPE_STEP)
-	{
-		float			f = 0;
-		float			d;
-
-		mstudioseqdesc_t *pseqdesc; // acess to studio flags 
-		pseqdesc = (mstudioseqdesc_t *)((byte *)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pCurrentEntity->curstate.sequence;
-
-		// don't do it if the goalstarttime hasn't updated in a while.
-
-		// NOTE:  Because we need to interpolate multiplayer characters, the interpolation time limit
-		//  was increased to 1.0 s., which is 2x the max lag we are accounting for.
-
-		if ((m_clTime < m_pCurrentEntity->curstate.animtime + 1.0f) &&
-			(m_pCurrentEntity->curstate.animtime != m_pCurrentEntity->latched.prevanimtime))
-		{
-			f = (m_clTime - m_pCurrentEntity->curstate.animtime) / (m_pCurrentEntity->curstate.animtime - m_pCurrentEntity->latched.prevanimtime);
-			//Con_DPrintf("%4.2f %.2f %.2f\n", f, m_pCurrentEntity->curstate.animtime, m_clTime);
-		}
-
-		if (m_fDoInterp)
-		{
-			// ugly hack to interpolate angle, position. current is reached 0.1 seconds after being set
-			f = f - 1.0;
-		}
-		else
-		{
-			f = 0;
-		}
-
-		if (pseqdesc->motiontype & STUDIO_LX || m_pCurrentEntity->curstate.eflags & EFLAG_SLERP)//uncle misha
-		{
-			for (i = 0; i < 3; i++)
-			{
-				modelpos[i] += (m_pCurrentEntity->origin[i] - m_pCurrentEntity->latched.prevorigin[i]) * f;
-			}
-		}
-
-		// NOTE:  Because multiplayer lag can be relatively large, we don't want to cap
-		//  f at 1.5 anymore.
-		//if (f > -1.0 && f < 1.5) {}
-
-		//			gEngfuncs.Con_DPrintf("%.0f %.0f\n",m_pCurrentEntity->angles[0][YAW], m_pCurrentEntity->angles[1][YAW] );
-		for (i = 0; i < 3; i++)
-		{
-			float ang1, ang2;
-
-			ang1 = m_pCurrentEntity->angles[i];
-			ang2 = m_pCurrentEntity->latched.prevangles[i];
-
-			d = ang1 - ang2;
-			if (d > 180)
-			{
-				d -= 360;
-			}
-			else if (d < -180)
-			{
-				d += 360;
-			}
-
-			angles[i] += d * f;
-		}
-		//Con_DPrintf("%.3f \n", f );
-	}
-	else if (m_pCurrentEntity->curstate.movetype != MOVETYPE_NONE)
-	{
-		VectorCopy(m_pCurrentEntity->angles, angles);
-	}
-
-	//Con_DPrintf("%.0f %0.f %0.f\n", modelpos[0], modelpos[1], modelpos[2] );
-	//	gEngfuncs.Con_DPrintf("%.0f %0.f %0.f\n", angles[0], angles[1], angles[2] );
-
-
-	angles[PITCH] = -angles[PITCH];
-	AngleMatrix(angles, (*m_protationmatrix));
-
-	(*m_protationmatrix)[0][3] = modelpos[0];
-	(*m_protationmatrix)[1][3] = modelpos[1];
-	(*m_protationmatrix)[2][3] = modelpos[2];
-}
-#endif
 void CStudioModelRenderer::StudioSetUpTransform(int trivial_accept)
 {
 	int i;
@@ -2388,6 +2309,9 @@ void CStudioModelRenderer::StudioSetUpTransform(int trivial_accept)
 
 	VectorCopy(m_pCurrentEntity->origin, modelpos);
 
+	// TODO: should really be stored with the entity instead of being reconstructed
+	// TODO: should use a look-up table
+	// TODO: could cache lazily, stored in the entity
 	angles[ROLL] = m_pCurrentEntity->curstate.angles[ROLL];
 	angles[PITCH] = m_pCurrentEntity->curstate.angles[PITCH];
 	angles[YAW] = m_pCurrentEntity->curstate.angles[YAW];
@@ -2668,12 +2592,6 @@ void CStudioModelRenderer::StudioSetupBonesPlayer(void)
 	static vec4_t q3[MAXSTUDIOBONES];
 	static float pos4[MAXSTUDIOBONES][3];
 	static vec4_t q4[MAXSTUDIOBONES];
-
-	/*if (!m_pCurrentEntity->player)
-	{
-		StudioSetupBones();
-		return;
-	}*/
 	
 	if (m_pCurrentEntity->curstate.sequence >= m_pStudioHeader->numseq)
 		m_pCurrentEntity->curstate.sequence = 0;
@@ -3168,74 +3086,6 @@ StudioMergeBones
 
 ====================
 */
-#if 0
-void CStudioModelRenderer::StudioMergeBones(model_t *m_pSubModel)
-{
-	int					i, j;
-	double				f;
-	int					do_hunt = true;
-
-	mstudiobone_t		*pbones;
-	mstudioseqdesc_t	*pseqdesc;
-	mstudioanim_t		*panim;
-
-	static float		pos[MAXSTUDIOBONES][3];
-	float				bonematrix[3][4];
-	static vec4_t		q[MAXSTUDIOBONES];
-
-	if (m_pCurrentEntity->curstate.sequence >= m_pStudioHeader->numseq)
-	{
-		m_pCurrentEntity->curstate.sequence = 0;
-	}
-
-	pseqdesc = (mstudioseqdesc_t *)((byte *)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pCurrentEntity->curstate.sequence;
-
-	f = StudioEstimateFrame(pseqdesc);
-
-	if (m_pCurrentEntity->latched.prevframe > f)
-	{
-		//Con_DPrintf("%f %f\n", m_pCurrentEntity->prevframe, f );
-	}
-
-	panim = StudioGetAnim(m_pSubModel, pseqdesc);
-	StudioCalcRotations(pos, q, pseqdesc, panim, f);
-
-	pbones = (mstudiobone_t *)((byte *)m_pStudioHeader + m_pStudioHeader->boneindex);
-
-
-	for (i = 0; i < m_pStudioHeader->numbones; i++)
-	{
-		for (j = 0; j < m_nCachedBones; j++)
-		{
-			if (stricmp(pbones[i].name, m_nCachedBoneNames[j]) == 0)
-			{
-				MatrixCopy(m_rgCachedBoneTransform[j], (*m_pbonetransform)[i]);
-				break;
-			}
-		}
-		if (j >= m_nCachedBones)
-		{
-			QuaternionMatrix(q[i], bonematrix);
-
-			bonematrix[0][3] = pos[i][0];
-			bonematrix[1][3] = pos[i][1];
-			bonematrix[2][3] = pos[i][2];
-
-			if (pbones[i].parent == -1)
-			{
-				ConcatTransforms((*m_protationmatrix), bonematrix, (*m_pbonetransform)[i]);
-
-				// Apply client-side effects to the transformation matrix
-				StudioFxTransform(m_pCurrentEntity, (*m_pbonetransform)[i]);
-			}
-			else
-			{
-				ConcatTransforms((*m_pbonetransform)[pbones[i].parent], bonematrix, (*m_pbonetransform)[i]);
-			}
-		}
-	}
-}
-#endif
 void CStudioModelRenderer::StudioMergeBones(model_t *m_pSubModel)
 {
 	int i, j;
@@ -3250,7 +3100,7 @@ void CStudioModelRenderer::StudioMergeBones(model_t *m_pSubModel)
 	float bonematrix[3][4];
 	static vec4_t q[MAXSTUDIOBONES];
 
-	if (m_pCurrentEntity->curstate.sequence >= m_pStudioHeader->numseq)
+	if (m_pCurrentEntity->curstate.sequence >= m_pStudioHeader->numseq || m_pCurrentEntity->curstate.sequence < 0)
 		m_pCurrentEntity->curstate.sequence = 0;
 
 	pseqdesc = (mstudioseqdesc_t *)((byte *)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pCurrentEntity->curstate.sequence;
@@ -3317,8 +3167,6 @@ int CStudioModelRenderer::StudioDrawModel(int flags)
 {
 	if (IsEntityTransparent(m_pCurrentEntity) && m_pCurrentEntity->curstate.renderamt == NULL)
 		return 1;
-
-	//m_pCurrentEntity = IEngineStudio.GetCurrentEntity();
 
 	m_bExternalEntity = false; // reset this no matter what
 	IEngineStudio.GetTimes(&m_nFrameCount, &m_clTime, &m_clOldTime);
@@ -3435,7 +3283,6 @@ StudioEstimateGait
 
 ====================
 */
-
 void CStudioModelRenderer::StudioEstimateGait(entity_state_t *pplayer)
 {
 	float dt;
@@ -3503,97 +3350,12 @@ void CStudioModelRenderer::StudioEstimateGait(entity_state_t *pplayer)
 	}
 }
 
-
 /*
 ====================
 StudioProcessGait
 
 ====================
 */
-#if 0
-void CStudioModelRenderer::StudioProcessGait(entity_state_t *pplayer)
-{
-	mstudioseqdesc_t	*pseqdesc;
-	float dt;
-	int iBlend;
-	float flYaw;	 // view direction relative to movement
-
-	pseqdesc = (mstudioseqdesc_t *)((byte *)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pCurrentEntity->curstate.sequence;
-
-	StudioPlayerBlend(pseqdesc, &iBlend, &m_pCurrentEntity->angles[PITCH]);
-
-	m_pCurrentEntity->latched.prevangles[PITCH] = m_pCurrentEntity->angles[PITCH];
-	m_pCurrentEntity->curstate.blending[0] = iBlend;
-	m_pCurrentEntity->latched.prevblending[0] = m_pCurrentEntity->curstate.blending[0];
-	m_pCurrentEntity->latched.prevseqblending[0] = m_pCurrentEntity->curstate.blending[0];
-
-	// Con_DPrintf("%f %d\n", m_pCurrentEntity->angles[PITCH], m_pCurrentEntity->blending[0] );
-
-	dt = (m_clTime - m_clOldTime);
-	if (dt < 0)
-		dt = 0;
-	else if (dt > 1.0)
-		dt = 1;
-
-	StudioEstimateGait(pplayer);
-
-	// Con_DPrintf("%f %f\n", m_pCurrentEntity->angles[YAW], m_pPlayerInfo->gaityaw );
-
-	// calc side to side turning
-	flYaw = m_pCurrentEntity->angles[YAW] - m_pPlayerInfo->gaityaw;
-	flYaw = flYaw - (int)(flYaw / 360) * 360;
-	if (flYaw < -180)
-		flYaw = flYaw + 360;
-	if (flYaw > 180)
-		flYaw = flYaw - 360;
-
-	if (flYaw > 120)
-	{
-		m_pPlayerInfo->gaityaw = m_pPlayerInfo->gaityaw - 180;
-		m_flGaitMovement = -m_flGaitMovement;
-		flYaw = flYaw - 180;
-	}
-	else if (flYaw < -120)
-	{
-		m_pPlayerInfo->gaityaw = m_pPlayerInfo->gaityaw + 180;
-		m_flGaitMovement = -m_flGaitMovement;
-		flYaw = flYaw + 180;
-	}
-
-	// adjust torso
-	m_pCurrentEntity->curstate.controller[0] = ((flYaw / 4.0) + 30) / (60.0 / 255.0);
-	m_pCurrentEntity->curstate.controller[1] = ((flYaw / 4.0) + 30) / (60.0 / 255.0);
-	m_pCurrentEntity->curstate.controller[2] = ((flYaw / 4.0) + 30) / (60.0 / 255.0);
-	m_pCurrentEntity->curstate.controller[3] = ((flYaw / 4.0) + 30) / (60.0 / 255.0);
-	m_pCurrentEntity->latched.prevcontroller[0] = m_pCurrentEntity->curstate.controller[0];
-	m_pCurrentEntity->latched.prevcontroller[1] = m_pCurrentEntity->curstate.controller[1];
-	m_pCurrentEntity->latched.prevcontroller[2] = m_pCurrentEntity->curstate.controller[2];
-	m_pCurrentEntity->latched.prevcontroller[3] = m_pCurrentEntity->curstate.controller[3];
-
-	m_pCurrentEntity->angles[YAW] = m_pPlayerInfo->gaityaw;
-	if (m_pCurrentEntity->angles[YAW] < -0)
-		m_pCurrentEntity->angles[YAW] += 360;
-	m_pCurrentEntity->latched.prevangles[YAW] = m_pCurrentEntity->angles[YAW];
-
-	pseqdesc = (mstudioseqdesc_t *)((byte *)m_pStudioHeader + m_pStudioHeader->seqindex) + pplayer->gaitsequence;
-
-	// calc gait frame
-	if (pseqdesc->linearmovement[0] > 0)
-	{
-		m_pPlayerInfo->gaitframe += (m_flGaitMovement / pseqdesc->linearmovement[0]) * pseqdesc->numframes;
-	}
-	else
-	{
-		m_pPlayerInfo->gaitframe += pseqdesc->fps * dt;
-	}
-
-	// do modulo
-	m_pPlayerInfo->gaitframe = m_pPlayerInfo->gaitframe - (int)(m_pPlayerInfo->gaitframe / pseqdesc->numframes) * pseqdesc->numframes;
-	if (m_pPlayerInfo->gaitframe < 0)
-		m_pPlayerInfo->gaitframe += pseqdesc->numframes;
-}
-#endif
-
 void CStudioModelRenderer::StudioProcessGait(entity_state_t *pplayer)
 {
 	mstudioseqdesc_t *pseqdesc;
@@ -3706,7 +3468,6 @@ int CStudioModelRenderer::StudioDrawPlayer(int flags, entity_state_t *pplayer)
 	if (m_nPlayerIndex < 0 || m_nPlayerIndex >= gEngfuncs.GetMaxClients())
 		return 0;
 
-	//m_pRenderModel = m_pCurrentEntity->model;
 	m_pRenderModel = IEngineStudio.SetupPlayerModel(m_nPlayerIndex);	//Fix single model
 
 	if (m_pRenderModel == NULL)
@@ -3791,6 +3552,11 @@ int CStudioModelRenderer::StudioDrawPlayer(int flags, entity_state_t *pplayer)
 		{
 			// show highest resolution multiplayer model
 			m_pCurrentEntity->curstate.body = 255;
+		}
+
+		if (!(m_pCvarDeveloper->value == 0 && gEngfuncs.GetMaxClients() == 1) && (m_pRenderModel == m_pCurrentEntity->model))
+		{
+			m_pCurrentEntity->curstate.body = 1; // force helmet
 		}
 
 		StudioSetupLighting();
@@ -4295,7 +4061,7 @@ void CStudioModelRenderer::StudioSetupRenderer(int rendermode)
 				VectorCopy(vVector, flForward);
 			}
 
-			if (0/*m_iFlippedVModel*/)	//check
+			if (0)	//check
 			{
 				flForward[0] = -flForward[0];
 				flForward[1] = -flForward[1];
@@ -4309,10 +4075,7 @@ void CStudioModelRenderer::StudioSetupRenderer(int rendermode)
 				gBSPRenderer.glProgramLocalParameter4fARB(GL_VERTEX_PROGRAM_ARB, 14 + (i * 3), flForward[0], flForward[1], flForward[2], cos((m_pModelLights[i]->spotcos * 2)*0.3*(M_PI * 2 / 360)));
 			}
 			else
-			{
-				/*if (m_iFlippedVModel)
-					VectorScale(flForward, -1, flForward);*/
-				
+			{	
 				glEnable(GL_LIGHT1 + i);
 				glLightfv(GL_LIGHT1 + i, GL_AMBIENT, Vector(0, 0, 0));
 				glLightfv(GL_LIGHT1 + i, GL_SPECULAR, Vector(0, 0, 0));
@@ -4452,10 +4215,7 @@ void CStudioModelRenderer::StudioSetupLighting(void)
 
 	if (gBSPRenderer.m_pWorld->lightdata)
 	{
-		/*if (m_iFlippedVModel)	//ilum mdls bugeado
-			iret = StudioRecursiveLightPoint(pInfo, gBSPRenderer.m_pWorld->nodes, end, point, color);
-		else*/
-			iret = StudioRecursiveLightPoint(pInfo, gBSPRenderer.m_pWorld->nodes, point, end, color);		
+		iret = StudioRecursiveLightPoint(pInfo, gBSPRenderer.m_pWorld->nodes, point, end, color);		
 	}
 		
 
@@ -4932,6 +4692,8 @@ void CStudioModelRenderer::StudioDrawPoints(void)
 	byte *pnormbone = ((byte *)m_pStudioHeader + m_pSubModel->norminfoindex);
 
 	int skinnum = m_pCurrentEntity->curstate.skin;
+	if (skinnum < 0)
+		skinnum = 0;
 	short *pskinref = (short *)((byte *)m_pTextureHeader + m_pTextureHeader->skinindex);
 
 	if (skinnum != 0 && skinnum < m_pTextureHeader->numskinfamilies)
@@ -5721,6 +5483,8 @@ void CStudioModelRenderer::StudioDrawPointsEXT(void)
 		return;
 
 	int skinnum = m_pCurrentEntity->curstate.skin; // for short..
+	if (skinnum < 0)
+		skinnum = 0;
 	short *pskinref = (short *)((byte *)m_pTextureHeader + m_pTextureHeader->skinindex);
 
 	if (skinnum != 0 && skinnum < m_pTextureHeader->numskinfamilies)
@@ -6482,6 +6246,8 @@ void CStudioModelRenderer::StudioDecalExternal(vec3_t vpos, vec3_t vnorm, const 
 			baseindex += m_pBodyPart->nummodels;
 
 			int skinnum = m_pCurrentEntity->curstate.skin; // for short..
+			if (skinnum < 0)
+				skinnum = 0;
 			short *pskinref = (short *)((byte *)m_pTextureHeader + m_pTextureHeader->skinindex);
 
 			if (skinnum != 0 && skinnum < m_pTextureHeader->numskinfamilies)
@@ -6762,7 +6528,6 @@ void CStudioModelRenderer::Mod_LoadTexture(mstudiotexture_t *ptexture, byte *pbu
 		}
 	}
 
-	//glGenTextures(1, &ptexture->index);
 	ptexture->index = current_ext_texture_id;
 	current_ext_texture_id++;
 
@@ -6839,6 +6604,8 @@ void CStudioModelRenderer::StudioDrawPointsSolid(void)
 	mstudiotexture_t *ptexture = (mstudiotexture_t *)((byte *)m_pTextureHeader + m_pTextureHeader->textureindex);
 
 	int skinnum = m_pCurrentEntity->curstate.skin;
+	if (skinnum < 0)
+		skinnum = 0;
 	short *pskinref = (short *)((byte *)m_pTextureHeader + m_pTextureHeader->skinindex);
 
 	if (skinnum != 0 && skinnum < m_pTextureHeader->numskinfamilies)
@@ -7003,6 +6770,8 @@ void CStudioModelRenderer::StudioDrawPointsSolidEXT(void)
 		return;
 
 	int skinnum = m_pCurrentEntity->curstate.skin; // for short..
+	if (skinnum < 0)
+		skinnum = 0;
 	short *pskinref = (short *)((byte *)m_pTextureHeader + m_pTextureHeader->skinindex);
 
 	if (skinnum != 0 && skinnum < m_pTextureHeader->numskinfamilies)

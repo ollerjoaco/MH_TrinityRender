@@ -33,10 +33,8 @@ Extended and/or recoded by Andrew Lucas
 #include "pm_defs.h"
 #include "pm_movevars.h"
 
-//#include <stdio.h>
 #include <string.h>
 #include <memory.h>
-#include <math.h>
 #include <fstream> 
 #include <iostream>
 
@@ -48,7 +46,6 @@ Extended and/or recoded by Andrew Lucas
 
 #include "r_efx.h"
 #include "r_studioint.h"
-//#include "studio_util.h"
 
 #include "StudioModelRenderer.h"
 #include "GameStudioModelRenderer.h"
@@ -174,6 +171,17 @@ Shutdown
 void CBSPRenderer::Shutdown(void)
 {
 	FreeBuffer();
+
+	// Clear previous
+	if (m_iNumSurfaces)
+	{
+		delete[] m_pSurfaces;
+		m_pSurfaces = nullptr;
+		m_iNumSurfaces = NULL;
+	}
+
+	ClearDetailObjects();
+	DeleteDecals();
 }
 
 /*
@@ -268,15 +276,14 @@ void CBSPRenderer::Init(void)
 	//
 	// Initialize basic stuff
 	//
-	//glGenTextures(1, &m_iEngineLightmapIndex);
+
 	m_iEngineLightmapIndex = current_ext_texture_id;
 	current_ext_texture_id++;
 
-	//glGenTextures(1, &m_iDetailLightmapIndex);
 	m_iDetailLightmapIndex = current_ext_texture_id;
 	current_ext_texture_id++;
 
-#if 0
+
 	// 0 normal
 	AddLightStyle(0, "m");
 
@@ -315,7 +322,7 @@ void CBSPRenderer::Init(void)
 
 	// 12 UNDERWATER LIGHT MUTATION
 	AddLightStyle(12, "mmnnmmnnnmmnn");
-#endif
+
 
 	m_iFrameCount = 0;
 	m_iVisFrame = 0;
@@ -434,14 +441,17 @@ void CBSPRenderer::VidInit(void)
 	VectorClear(m_vSkyOrigin);
 	VectorClear(m_vSkyWorldOrigin);
 
-	/*if (m_bShadowSupport)
+	if (m_bShadowSupport)
 	{
 		for (int i = 0; i < MAX_DYNLIGHTS; i++)
 		{
 			if (m_pDynLights[i].depth)
-				glDeleteTextures(1, (GLuint *)m_pDynLights[i].depth);
+			{
+				glDeleteTextures(1, &m_pDynLights[i].depth);
+				m_pDynLights[i].depth = 0;
+			}
 		}
-	}*/
+	}
 
 	// Clear all lightstyles.
 	memset(m_iLightStyleValue, 0, sizeof(m_iLightStyleValue));
@@ -458,6 +468,7 @@ void CBSPRenderer::VidInit(void)
 	if (m_iNumSurfaces)
 	{
 		delete[] m_pSurfaces;
+		m_pSurfaces = nullptr;
 		m_iNumSurfaces = NULL;
 	}
 
@@ -468,7 +479,6 @@ void CBSPRenderer::VidInit(void)
 
 		for (int i = 0; i < MAX_DYNLIGHTS; i++)
 		{
-			//glGenTextures(1, &m_pDynLights[i].depth);
 			m_pDynLights[i].depth = current_ext_texture_id;
 			current_ext_texture_id++;
 
@@ -586,10 +596,9 @@ void CBSPRenderer::GetRenderEnts(void)
 			continue;
 		}
 
-		if (/*(pEntity->curstate.effects & FL_WATERSHADER)*/(pEntity->curstate.skin == CONTENTS_WATER) && m_bShaderSupport && gWaterShader.m_pCvarWaterShader->value > 0)
+		// CHECK
+		if ((pEntity->curstate.skin == CONTENTS_WATER) && m_bShaderSupport && gWaterShader.m_pCvarWaterShader->value > 0)
 		{
-
-			//pEntity->model
 			if (!pEntity->efrag)
 				gWaterShader.AddEntity(pEntity);
 
@@ -709,6 +718,7 @@ void CBSPRenderer::GetRenderEnts(void)
 		mlight->maxs.y = mlight->origin.y + mlight->radius;
 		mlight->maxs.z = mlight->origin.z + mlight->radius;
 		mlight->flashlight = false;
+		mlight->spotcos = 0;
 	}
 
 	cl_dlight_t *dl = m_pDynLights;
@@ -989,6 +999,8 @@ void CBSPRenderer::SetupRenderer(void)
 	RemoveSky();
 
 	gTextureLoader.FreeWADFiles();
+	gPropManager.ClearEntityData();
+
 	glPopAttrib();
 }
 
@@ -1021,23 +1033,6 @@ void CBSPRenderer::RendererRefDef(ref_params_t *pparams)
 	for (int i = 0; i < MAX_GOLDSRC_DLIGHTS; i++, dl++)
 	{
 		memset(dl, 0, sizeof(dlight_t));
-		
-		/*if (dl->radius)
-		{
-			cl_dlight_t *dl2 = CL_AllocDLight(31 + i);
-
-			dl2->origin.x = dl->origin[0];
-			dl2->origin.y = dl->origin[1];
-			dl2->origin.z = dl->origin[2];
-			dl2->radius = dl->radius;
-			dl2->color.x = dl->color.r;
-			dl2->color.y = dl->color.g;
-			dl2->color.z = dl->color.b;
-			dl2->die = dl->die;
-			dl2->decay = dl->decay;
-
-			memset(dl, 0, sizeof(dlight_t));
-		}*/
 	}
 		
 
@@ -1353,7 +1348,6 @@ void CBSPRenderer::CreateTextures(void)
 		buf1[i].r = buf1[i].g = buf1[i].b = (unsigned char)att;
 	}
 
-	//glGenTextures(1, &m_iAttenuation1DTexture);
 	m_iAttenuation1DTexture = current_ext_texture_id;
 	current_ext_texture_id++;
 
@@ -1396,7 +1390,6 @@ void CBSPRenderer::CreateTextures(void)
 		}
 	}
 
-	//glGenTextures(1, &m_iAtten3DPoint);
 	m_iAtten3DPoint = current_ext_texture_id; current_ext_texture_id++;
 	glBindTexture(GL_TEXTURE_3D, m_iAtten3DPoint);
 	glTexImage3DEXT(GL_TEXTURE_3D, 0, 3, 64, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, buf2);
@@ -1419,7 +1412,6 @@ void CBSPRenderer::CreateTextures(void)
 		buf3[i].b = 255;
 	}
 
-	//glGenTextures(1, &m_iLightDummy);
 	m_iLightDummy = current_ext_texture_id; current_ext_texture_id++;
 	glBindTexture(GL_TEXTURE_2D, m_iLightDummy);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -3257,9 +3249,9 @@ void CBSPRenderer::BuildLightmap(msurface_t *surf, int surfindex, color24 *out)
 
 		m_pSurfaces[surfindex].cached_light[maps] = m_iLightStyleValue[surf->styles[maps]];
 		
-		float scale = (float)m_iLightStyleValue[surf->styles[maps]] / 255;
 		if (m_pSurfaces[surfindex].cached_light[maps] != 0)
 		{
+			float scale = (float)m_iLightStyleValue[surf->styles[maps]] / 255;
 			for (int i = 0; i < size; i++)
 			{				
 				int iR = (int)m_pBlockLights[i].r + (int)lightmap[i].r*scale;
@@ -4281,13 +4273,16 @@ void CBSPRenderer::CreateDecal(vec3_t endpos, vec3_t pnormal, const char *name, 
 			maxs[1] = m_pDecals[i].position[1] + radius;
 			maxs[2] = m_pDecals[i].position[2] + radius;
 
-			/*if (!CullDecalBBox(mins, maxs))
+			if (!CullDecalBBox(mins, maxs))
 			{
+				for (int j = 0; j < m_pDecals[i].inumpolys; j++)
+					delete[] m_pDecals[i].polys[j].pverts;
+
 				delete[] m_pDecals[i].polys;
 				memset(&m_pDecals[i], 0, sizeof(customdecal_t));
 				pDecal = &m_pDecals[i];
 				break;
-			}*/
+			}
 		}
 
 		if (!pDecal)
@@ -5910,6 +5905,7 @@ void CBSPRenderer::DrawShadowPasses(void)
 
 	R_SaveGLStates();
 	RenderFog();
+
 	for (int i = 0; i < MAX_DYNLIGHTS; i++, dl++)
 	{
 		if (dl->die < time || !dl->radius || !dl->cone_size || dl->noshadow)

@@ -59,7 +59,6 @@ extern CGameStudioModelRenderer g_StudioRenderer;
 #endif
 
 #define BASE_EXT_TEXTURE_ID		(1<<25) // dont use zero
-//#define BASE_EXT_TEXTURE_ID		100000 // dont use zero
 
 int current_ext_texture_id = BASE_EXT_TEXTURE_ID;
 
@@ -386,7 +385,7 @@ int IsEntityMoved(cl_entity_t *e)
 	if (e->angles[0] || e->angles[1] || e->angles[2] ||
 		e->origin[0] || e->origin[1] || e->origin[2] ||
 		e->curstate.renderfx == 70 ||
-		e->curstate.effects & FL_CONVEYOR) // skybox models reques separate pass
+		e->curstate.effects & FL_CONVEYOR || e->curstate.frame > 0) // skybox models reques separate pass
 		return TRUE;
 	else
 		return FALSE;
@@ -912,7 +911,7 @@ void RenderersDumpInfo(void)
 	gEngfuncs.Con_Printf("Number of vertexes: %i.\n", gBSPRenderer.m_iTotalVertCount);
 	gEngfuncs.Con_Printf("Number of client side entities: %i.\n", gPropManager.m_iNumEntities);
 	gEngfuncs.Con_Printf("Number of detail textures: %i.\n", gBSPRenderer.m_iNumDetailTextures);
-	//gEngfuncs.Con_Printf("Current free texture ID: %i.\n", current_ext_texture_id);
+	gEngfuncs.Con_Printf("Current free texture ID: %i.\n", current_ext_texture_id);
 	if (gBSPRenderer.m_bShaderSupport) gEngfuncs.Con_Printf("ARB shaders supported.\n");
 	else gEngfuncs.Con_Printf("ARB shaders not supported.\n");
 	if (gBSPRenderer.m_bRadialFogSupport) gEngfuncs.Con_Printf("Radial fog supported.\n");
@@ -1155,7 +1154,6 @@ void SetupFlashlight(vec3_t origin, vec3_t angles, float time, float frametime)
 		flashlight->origin = origin + (up * 1) + (right * 1);
 		flashlight->radius = 700;
 		flashlight->die = time + 0.01;
-		//flashlight->cone_size = 50 + add;	//or
 		flashlight->cone_size = 35 + add;	//radius size
 		flashlight->color.x = 1.0;
 		flashlight->color.y = 1.0;
@@ -1314,7 +1312,7 @@ void R_DisableSteamMSAA(void)
 {
 	// make sure we start with FBO / AA disabled
 	gEngfuncs.pfnClientCmd("_set_vid_level 1");
-	gEngfuncs.pfnClientCmd("_sethdmodels 0");
+	gEngfuncs.pfnClientCmd("_sethdmodels 1");
 	gEngfuncs.pfnClientCmd("gl_texturemode GL_LINEAR_MIPMAP_LINEAR");
 	gEngfuncs.pfnClientCmd("gl_round_down 0");
 	gEngfuncs.pfnClientCmd("_restart");
@@ -1367,7 +1365,8 @@ void R_RestoreGLStates(void)
 
 /*
 =================
-R_Init
+R_Init2
+
 =================
 */
 void R_Init2(void)
@@ -1387,6 +1386,7 @@ void R_Init2(void)
 /*
 =================
 R_VidInit
+
 =================
 */
 void R_VidInit(void)
@@ -1399,7 +1399,7 @@ void R_VidInit(void)
 	gParticleEngine.VidInit();
 	gMirrorManager.VidInit();
 	g_StudioRenderer.VidInit();
-	//gPropManager.VidInit();
+	gPropManager.VidInit();
 
 	glPopAttrib();
 }
@@ -1407,6 +1407,7 @@ void R_VidInit(void)
 /*
 =================
 R_Shutdown
+
 =================
 */
 void R_Shutdown(void)
@@ -1416,8 +1417,8 @@ void R_Shutdown(void)
 	gTextureLoader.Shutdown();
 	gBSPRenderer.Shutdown();
 	gPropManager.Shutdown();
-	//gWaterShader.Shutdown();
-	//gParticleEngine.Shutdown();
+	gWaterShader.Shutdown();
+	gParticleEngine.Shutdown();
 
 	glPopAttrib();
 }

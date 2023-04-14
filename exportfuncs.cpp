@@ -35,9 +35,6 @@ extern engine_studio_api_t IEngineStudio;
 //RENDERERS END
 
 //RENDERERS START
-extern CGameStudioModelRenderer g_StudioRenderer;
-extern engine_studio_api_t IEngineStudio;
-
 CBSPRenderer gBSPRenderer;
 CParticleEngine gParticleEngine;
 CWaterShader gWaterShader;
@@ -53,6 +50,9 @@ int g_iFlashLight;
 int Initialize(struct cl_enginefuncs_s *pEnginefuncs, int iVersion)
 {
 	memcpy(&gEngfuncs, pEnginefuncs, sizeof(gEngfuncs));
+	//RENDERERS START
+	R_DisableSteamMSAA();
+	//RENDERERS END
 	memcpy(&gEfxAPI, pEnginefuncs->pEfxAPI, sizeof(gEfxAPI));
 
 	pEnginefuncs->pfnHookUserMsg = &HookUserMsg;
@@ -97,9 +97,17 @@ int HUD_VidInit(void)
 	return gExportfuncs.HUD_VidInit();
 }
 
+//RENDERERS START
+extern void HUD_PrintSpeeds(void);
+//RENDERERS END
+
 int HUD_Redraw(float time, int intermission)
 {
 	gHUD.Redraw(time, intermission);
+
+	//RENDERERS START
+	HUD_PrintSpeeds();
+	//RENDERERS END
 
 	return gExportfuncs.HUD_Redraw(time, intermission);
 }
@@ -170,7 +178,14 @@ int	HUD_AddEntity(int type, struct cl_entity_s *ent, const char *modelname)
 void HUD_ProcessPlayerState(struct entity_state_s *dst, const struct entity_state_s *src)
 {
 	//RENDERERS START
-	
+
+	/*
+	if (src->effects & EF_DIMLIGHT)
+		g_iFlashLight = 1;
+	else
+		g_iFlashLight = 0;
+	*/
+
 	cl_entity_t *pPlayer = gEngfuncs.GetLocalPlayer();
 
 	if (dst->number == gEngfuncs.GetLocalPlayer()->index)
@@ -268,3 +283,18 @@ void HUD_PostRunCmd(struct local_state_s *from, struct local_state_s *to, struct
 
 	gExportfuncs.HUD_PostRunCmd(from, to, cmd, runfuncs, time, random_seed);
 }
+
+//RENDERERS_START
+/*
+==========================
+CL_GetModelData
+
+
+==========================
+*/
+void CL_GetModelByIndex(int iIndex, void** pPointer)
+{
+	void* pModel = IEngineStudio.GetModelByIndex(iIndex);
+	*pPointer = pModel;
+}
+//RENDERERS_END

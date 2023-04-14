@@ -23,12 +23,9 @@
 #include "dlight.h"
 #include "triangleapi.h"
 
-//#include <stdio.h>
 #include <string.h>
 #include <memory.h>
-//#include <math.h>
 
-#include "studio_util.h"
 #include "r_studioint.h"
 
 #include "StudioModelRenderer.h"
@@ -138,5 +135,5 @@ int HUD_GetStudioModelInterface(int version, struct r_studio_interface_s **ppint
 	R_StudioInit();
 
 	// Success
-	return 1/*gExportfuncs.HUD_GetStudioModelInterface(version, ppinterface, pstudio)*/;
+	return 1;
 }

@@ -29,10 +29,8 @@ Additional code taken from Id Software
 #include "event_api.h"
 #include "pm_defs.h"
 
-#include <stdio.h>
 #include <string.h>
 #include <memory.h>
-//#include <math.h>
 
 #include "propmanager.h"
 #include "particle_engine.h"
@@ -135,7 +133,6 @@ void CMirrorManager::AllocNewMirror( cl_entity_t *entity )
 	pMirror->entity = entity;
 	pMirror->entity->efrag = (efrag_s *)pMirror;
 
-	//glGenTextures(1, &pMirror->texture);
 	pMirror->texture = current_ext_texture_id;	current_ext_texture_id++;
 	pMirror->origin[0] = (pMirror->mins[0] + pMirror->maxs[0]) * 0.5f;
 	pMirror->origin[1] = (pMirror->mins[1] + pMirror->maxs[1]) * 0.5f;

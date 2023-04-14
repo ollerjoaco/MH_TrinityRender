@@ -13,12 +13,10 @@ Written by Andrew Lucas
 
 #include "metahook.h"
 #include "util_vector.h"
-
 #include "hud.h"
 #include "textureloader.h"
 #include "bsprenderer.h"
 #include "propmanager.h"
-
 #include "gl/glext.h"
 
 #pragma warning( disable: 4018 )
@@ -691,6 +689,8 @@ void CTextureLoader::LoadPallettedTexture(byte *data, byte *pal, cl_texture_t *p
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, outwidth, outheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex);
 
 	delete[] tex;

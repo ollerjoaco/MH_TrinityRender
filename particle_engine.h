@@ -39,6 +39,7 @@ class CParticleEngine
 public:
 	void Init( void );
 	void VidInit( void );
+	void Shutdown(void);
 
 	void CreateCluster( char *szPath, vec3_t origin, vec3_t dir, int iId );
 	particle_system_t *CreateSystem( char *szPath, vec3_t origin, vec3_t dir, int iId, particle_system_t *parent = NULL );

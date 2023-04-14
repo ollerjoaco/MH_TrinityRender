@@ -18,7 +18,6 @@ Extended and/or recoded by Andrew Lucas
 #pragma once
 #endif
 
-//#include "windows.h"
 #include "gl/gl.h"
 #include "pm_defs.h"
 #include "cl_entity.h"
@@ -333,6 +332,7 @@ public:
 
 	vec3_t				m_vDecalMins;
 	vec3_t				m_vDecalMaxs;
+
 
 public:
 	float				m_flLightScale;

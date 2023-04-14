@@ -4,7 +4,7 @@
 #include "message.h"
 
 pfnUserMsgHook pmSetFOV;
-pfnUserMsgHook pmFog;
+pfnUserMsgHook pmSetFog;
 
 int HookUserMsg(char *szMsgName, pfnUserMsgHook pfn)
 {
@@ -13,10 +13,10 @@ int HookUserMsg(char *szMsgName, pfnUserMsgHook pfn)
 		pmSetFOV = pfn;
 		return gEngfuncs.pfnHookUserMsg(szMsgName, __MsgFunc_SetFOV);
 	}
-	else if(!strcmp(szMsgName, "Fog"))
+	else if(!strcmp(szMsgName, "SetFog"))
 	{
-		pmFog = pfn;
-		return gEngfuncs.pfnHookUserMsg(szMsgName, __MsgFunc_Fog);
+		pmSetFog = pfn;
+		return gEngfuncs.pfnHookUserMsg(szMsgName, __MsgFunc_SetFog);
 	}
 	return gEngfuncs.pfnHookUserMsg(szMsgName, pfn);
 }

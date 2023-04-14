@@ -38,8 +38,10 @@ class CWaterShader
 {
 public:
 	void	Init( void );
+	void	Shutdown(void);
 	void	VidInit( void );
 	void	Restore( void );
+	void	ClearEntities(void);
 
 	void	AddEntity( cl_entity_t *entity );
 	void	DrawWater( void );
@@ -58,6 +60,8 @@ public:
 
 	bool	ViewInWater( void );
 	bool	ShouldReflect( int index );
+
+	vec3_t	GetWaterOrigin(cl_water_t* pwater = nullptr);
 
 public:
 	bool			m_bViewInWater;

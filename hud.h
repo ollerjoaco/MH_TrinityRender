@@ -22,7 +22,6 @@ struct fog_settings_t
 class CHud
 {
 public:
-//	CHud();
 	~CHud();
 
 public:
@@ -41,15 +40,14 @@ public:
 
 	int m_iFOV;
 
-//RENDERERS START
+	//RENDERERS START
 	fog_settings_t m_pSkyFogSettings;
 	fog_settings_t m_pFogSettings;
 	FrustumCheck viewFrustum;
 
 	int _cdecl MsgFunc_SetFOV(const char *pszName, int iSize, void *pbuf);
-	int _cdecl MsgFunc_Fog(const char *pszName, int iSize, void *pbuf);
 
-/*	int  _cdecl MsgFunc_SetFog( const char *pszName, int iSize, void *pbuf );
+	int  _cdecl MsgFunc_SetFog( const char *pszName, int iSize, void *pbuf );
 	int  _cdecl MsgFunc_LightStyle( const char *pszName, int iSize, void *pbuf );
 	int  _cdecl MsgFunc_StudioDecal( const char *pszName, int iSize, void *pbuf );
 	int  _cdecl MsgFunc_FreeEnt( const char *pszName, int iSize, void *pbuf );
@@ -58,15 +56,13 @@ public:
 	int  _cdecl MsgFunc_SkyMark_S( const char *pszName, int iSize, void *pbuf );
 	int  _cdecl MsgFunc_SkyMark_W( const char *pszName, int iSize, void *pbuf );
 	int  _cdecl MsgFunc_DynLight( const char *pszName, int iSize, void *pbuf );
-	int  _cdecl MsgFunc_CreateSystem( const char *pszName, int iSize, void *pbuf );*/
-//RENDERERS END
+	int  _cdecl MsgFunc_CreateSystem( const char *pszName, int iSize, void *pbuf );
+	//RENDERERS END
 };
 
 int __MsgFunc_SetFOV(const char *pszName, int iSize, void *pbuf);
-int __MsgFunc_Fog(const char *pszName, int iSize, void *pbuf);
+int __MsgFunc_SetFog(const char *pszName, int iSize, void *pbuf);
 
 extern CHud gHUD;
-
-//#include "util.h"
 
 #endif

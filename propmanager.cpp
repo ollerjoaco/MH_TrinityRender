@@ -29,17 +29,14 @@ Transparency code by Neil "Jed" Jedrzejewski
 #include "event_api.h"
 #include "pm_defs.h"
 
-#include <stdio.h>
 #include <string.h>
 #include <memory.h>
-//#include <math.h>
 
 #include "propmanager.h"
 #include "bsprenderer.h"
 
 #include "r_efx.h"
 #include "r_studioint.h"
-#include "studio_util.h"
 
 #include "textureloader.h"
 #include "particle_engine.h"
@@ -122,24 +119,7 @@ void CPropManager::Reset( void )
 		m_iNumHeaders = NULL;
 	}
 
-	if(m_iNumBSPEntities)
-	{
-		for(int i = 0; i < m_iNumBSPEntities; i++)
-		{
-			epair_t *pPair = m_pBSPEntities[i].epairs;
-			while(pPair)
-			{
-				epair_t *pFree = pPair;
-				pPair = pFree->next;
-
-				delete [] pFree->key;
-				delete [] pFree->value;
-				delete [] pFree;
-			}
-		}
-		memset(m_pBSPEntities, 0, sizeof(m_pBSPEntities));
-		m_iNumBSPEntities = 0;
-	}
+	ClearEntityData();
 
 	if(m_pEntData)
 	{
@@ -176,6 +156,45 @@ Init
 void CPropManager::Init( void )
 {
 	m_pCvarDrawClientEntities = CVAR_CREATE( "te_client_entities", "1", 0 );
+}
+
+/*
+====================
+VidInit
+
+====================
+*/
+void CPropManager::VidInit(void)
+{
+	Reset();
+}
+
+/*
+====================
+ClearEntityData
+
+====================
+*/
+void CPropManager::ClearEntityData(void)
+{
+	if (!m_iNumBSPEntities)
+		return;
+
+	for (int i = 0; i < m_iNumBSPEntities; i++)
+	{
+		epair_t* pPair = m_pBSPEntities[i].epairs;
+		while (pPair)
+		{
+			epair_t* pFree = pPair;
+			pPair = pFree->next;
+
+			delete[] pFree->key;
+			delete[] pFree->value;
+			delete[] pFree;
+		}
+	}
+	memset(m_pBSPEntities, 0, sizeof(m_pBSPEntities));
+	m_iNumBSPEntities = 0;
 }
 
 /*
@@ -416,7 +435,7 @@ void CPropManager::LoadEntVars( void )
 			pValue = ValueForKey(&m_pBSPEntities[i], "origin");
 			if (pValue)
 			{
-				sscanf(pValue, "%f %f %f", &m_pModelLights[m_iNumModelLights].origin[0],
+				sscanf_s(pValue, "%f %f %f", &m_pModelLights[m_iNumModelLights].origin[0],
 					&m_pModelLights[m_iNumModelLights].origin[1],
 					&m_pModelLights[m_iNumModelLights].origin[2]);
 
@@ -426,14 +445,14 @@ void CPropManager::LoadEntVars( void )
 			pValue = ValueForKey(&m_pBSPEntities[i], "renderamt");
 			if (pValue)
 			{
-				sscanf(pValue, "%d", &m_pModelLights[m_iNumModelLights].curstate.renderamt);
+				sscanf_s(pValue, "%d", &m_pModelLights[m_iNumModelLights].curstate.renderamt);
 			}
 
 			pValue = ValueForKey(&m_pBSPEntities[i], "rendercolor");
 			if (pValue)
 			{
 				int  iColR, iColG, iColB;
-				sscanf(pValue, "%d %d %d", &iColR, &iColG, &iColB);
+				sscanf_s(pValue, "%d %d %d", &iColR, &iColG, &iColB);
 				m_pModelLights[m_iNumModelLights].curstate.rendercolor.r = iColR;
 				m_pModelLights[m_iNumModelLights].curstate.rendercolor.g = iColG;
 				m_pModelLights[m_iNumModelLights].curstate.rendercolor.b = iColB;
@@ -467,7 +486,7 @@ void CPropManager::LoadEntVars( void )
 			pValue = ValueForKey(&m_pBSPEntities[i], "origin");
 			if (pValue)
 			{
-				sscanf(pValue, "%f %f %f", &m_pDecals[m_iNumDecals].pos[0],
+				sscanf_s(pValue, "%f %f %f", &m_pDecals[m_iNumDecals].pos[0],
 					&m_pDecals[m_iNumDecals].pos[1],
 					&m_pDecals[m_iNumDecals].pos[2]);
 			}
@@ -518,7 +537,7 @@ void CPropManager::LoadEntVars( void )
 			pValue = ValueForKey(&m_pBSPEntities[i], "origin");
 			if (pValue)
 			{
-				sscanf(pValue, "%f %f %f", &m_pEntities[m_iNumEntities].origin[0],
+				sscanf_s(pValue, "%f %f %f", &m_pEntities[m_iNumEntities].origin[0],
 					&m_pEntities[m_iNumEntities].origin[1],
 					&m_pEntities[m_iNumEntities].origin[2]);
 
@@ -529,45 +548,44 @@ void CPropManager::LoadEntVars( void )
 			if (pValue)
 			{
 				// set the yaw angle...
-				sscanf(pValue, "%f %f %f", &m_pEntities[m_iNumEntities].angles[0],
+				sscanf_s(pValue, "%f %f %f", &m_pEntities[m_iNumEntities].angles[0],
 										&m_pEntities[m_iNumEntities].angles[1],
 										&m_pEntities[m_iNumEntities].angles[2]);
 				VectorCopy(m_pEntities[m_iNumEntities].angles, m_pEntities[m_iNumEntities].curstate.angles);
-				//m_pEntities[m_iNumEntities].curstate.angles = m_pEntities[m_iNumEntities].angles;
 			}
 
 			pValue = ValueForKey(&m_pBSPEntities[i], "renderamt");
 			if (pValue)
 			{
-				sscanf(pValue, "%d", &m_pEntities[m_iNumEntities].curstate.renderamt);
+				sscanf_s(pValue, "%d", &m_pEntities[m_iNumEntities].curstate.renderamt);
 			}
 
 			pValue = ValueForKey(&m_pBSPEntities[i], "sequence");
 
 			if (pValue)
-				sscanf(pValue, "%d", &m_pEntities[m_iNumEntities].curstate.sequence);
+				sscanf_s(pValue, "%d", &m_pEntities[m_iNumEntities].curstate.sequence);
 
 			pValue = ValueForKey(&m_pBSPEntities[i], "body");
 
 			if (pValue)
-				sscanf(pValue, "%d", &m_pEntities[m_iNumEntities].curstate.body);
+				sscanf_s(pValue, "%d", &m_pEntities[m_iNumEntities].curstate.body);
 
 			pValue = ValueForKey(&m_pBSPEntities[i], "skin");
 
 			if (pValue)
-				sscanf(pValue, "%hi", &m_pEntities[m_iNumEntities].curstate.skin);
+				sscanf_s(pValue, "%hi", &m_pEntities[m_iNumEntities].curstate.skin);
 
 
 			pValue = ValueForKey(&m_pBSPEntities[i], "scale");
 
 			if (pValue)
-				sscanf(pValue, "%f", &m_pEntities[m_iNumEntities].curstate.scale);
+				sscanf_s(pValue, "%f", &m_pEntities[m_iNumEntities].curstate.scale);
 
 
 			pValue = ValueForKey(&m_pBSPEntities[i], "renderfx");
 
 			if (pValue)
-				sscanf(pValue, "%d", &m_pEntities[m_iNumEntities].curstate.renderfx);
+				sscanf_s(pValue, "%d", &m_pEntities[m_iNumEntities].curstate.renderfx);
 
 			pValue = ValueForKey(&m_pBSPEntities[i], "DisableShadows");
 
@@ -578,7 +596,7 @@ void CPropManager::LoadEntVars( void )
 			if (pValue)
 			{
 				int  iColR, iColG, iColB;
-				sscanf(pValue, "%d %d %d", &iColR, &iColG, &iColB);
+				sscanf_s(pValue, "%d %d %d", &iColR, &iColG, &iColB);
 				m_pEntities[m_iNumEntities].curstate.rendercolor.r = iColR;
 				m_pEntities[m_iNumEntities].curstate.rendercolor.g = iColG;
 				m_pEntities[m_iNumEntities].curstate.rendercolor.b = iColB;
@@ -607,7 +625,7 @@ void CPropManager::LoadEntVars( void )
 							pValue = ValueForKey(&m_pBSPEntities[j], "origin");
 							if (pValue)
 							{
-								sscanf(pValue, "%f %f %f", &m_pCurrentExtraData->lightorigin[0],
+								sscanf_s(pValue, "%f %f %f", &m_pCurrentExtraData->lightorigin[0],
 									&m_pCurrentExtraData->lightorigin[1],
 									&m_pCurrentExtraData->lightorigin[2]);
 
@@ -865,7 +883,7 @@ bool CPropManager::SetupCable ( cabledata_t *cable, entity_t *entity )
 	if(!pValue)
 		return false;
 
-	sscanf(pValue, "%f %f %f", &vposition1[0], &vposition1[1], &vposition1[2]);
+	sscanf_s(pValue, "%f %f %f", &vposition1[0], &vposition1[1], &vposition1[2]);
 
 	// Find our target entity
 	pValue = ValueForKey(entity, "target");
@@ -890,7 +908,7 @@ bool CPropManager::SetupCable ( cabledata_t *cable, entity_t *entity )
 				return false;
 
 			// Copy origin over
-			sscanf(pValue, "%f %f %f", &vposition2[0], &vposition2[1], &vposition2[2]);
+			sscanf_s(pValue, "%f %f %f", &vposition2[0], &vposition2[1], &vposition2[2]);
 		}
 	}
 

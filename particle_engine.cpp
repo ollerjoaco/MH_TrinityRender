@@ -29,10 +29,8 @@ Written by Andrew Lucas
 #include "event_api.h"
 #include "pm_defs.h"
 
-//#include <stdio.h>
 #include <string.h>
 #include <memory.h>
-#include <math.h>
 
 #include "propmanager.h"
 #include "particle_engine.h"
@@ -60,6 +58,17 @@ void CParticleEngine::Init( void )
 	m_pCvarParticleDebug = CVAR_CREATE( "te_particles_debug", "0", 0 );
 	m_pCvarGravity = gEngfuncs.pfnGetCvarPointer("sv_gravity");
 };
+
+/*
+====================
+Shutdown
+
+====================
+*/
+void CParticleEngine::Shutdown(void)
+{
+	VidInit();
+}
 
 /*
 ====================

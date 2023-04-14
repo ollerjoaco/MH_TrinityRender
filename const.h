@@ -108,13 +108,19 @@
 #define EF_NOINTERP				32	// don't interpolate the next frame
 #define EF_LIGHT				64	// rocket flare glow sprite
 #define EF_NODRAW				128	// don't draw entity
-#define FL_ELIGHT				256
-#define FL_DLIGHT				512
-#define FL_SPOTLIGHT			1024
-#define FL_WATERSHADER			2048
-#define FL_MIRROR				4096
-#define FL_NOSHADOW				8192
-#define FL_NOMODEL				16384
+#define EF_NIGHTVISION          256 // player nightvision
+#define EF_SNIPERLASER          512 // sniper laser effect
+#define EF_FIBERCAMERA          1024 // fiber camera
+#define EF_FORCEVISIBILITY      2048 // force visibility
+#define EF_OWNER_VISIBILITY     4096 // visibility for owner
+#define EF_OWNER_NO_VISIBILITY  8192 // no visibility for owner
+#define FL_ELIGHT				16384
+#define FL_DLIGHT				32768
+#define FL_SPOTLIGHT			65536
+#define FL_WATERSHADER			131072
+#define FL_MIRROR				262144
+#define FL_NOSHADOW				524288
+#define FL_NOMODEL				1048576
 
 // entity flags
 #define EFLAG_SLERP				1	// do studio interpolation of this entity
