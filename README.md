@@ -41,9 +41,9 @@ Server-Side part of the mod it´s done with a modifidied [reGame](https://github
 
 | CVar                               | Default | Disable | Enable          | Description                                    |
 | :--------------------------------- | :-----: | :-: | :----------: | :--------------------------------------------- |
-| te_client_entities                      | 1       | 0   | 1            | Display of new client entities.<br/>`0` disabled <br/>`1` enabled |
-| te_detail                 | 1       | 0   | 1            | Enables/Disables detail texturing.<br/>`0` disabled <br/>`1` enabled |
-| te_dynlights                         | 1     | 0 | 1            | Enables/Disables dynamic lights in the world ( flashlight, env_spotlight ).<br />`0` disabled<br />`1` enabled |
+| te_client_entities                      | 1       | 0   | 1            | Display of new client entities. |
+| te_detail                 | 1       | 0   | 1            | Enables/Disables detail texturing. |
+| te_dynlights                         | 1     | 0 | 1            | Enables/Disables dynamic lights in the world ( flashlight, env_spotlight ). |
 | te_mirrors                       | 1   | 0   | 1     | Enables/Disables the use of mirrors in the game. |
 | te_mirror_player                  | 1       | 0   | 1            | Enables/Disables players shown in mirrors. |
 | te_model_decals                       | 1       | 0   | 1            | Enables/Disables model decals. |
@@ -64,3 +64,5 @@ Server-Side part of the mod it´s done with a modifidied [reGame](https://github
 | te_world_shaders                    | 1       | 0   | 1            | Enables/Disables world shaders in the game. |
 
 </details>
+
+<b>Warning!</b> As Trinity Engine uses metahook for the client-side part of the code, it´s not binary compatible with gsClient since it has a modified client.dll . Also some plugins using StudioModelRenderer may not work such as BulletPhysics. This is a Renderer so it wont be compatible with other renderers such as Paranoia or MetaRenderer, choose the one you prefer the most.
