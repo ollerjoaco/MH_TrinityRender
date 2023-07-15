@@ -1,4 +1,9 @@
-# Trinity Engine
+# DEPRECATED
+
+Please see the new repository for updated code, this wont be updating anymore. 
+New Repo: (https://github.com/ollerjoaco/Trinity-EngineSv)
+
+## Trinity Engine
 
 This is a [Trinity Engine](https://github.com/TheOverfloater/trinity-engine) porting for Counter Strike 1.6
 
