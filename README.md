@@ -1,6 +1,6 @@
 # DEPRECATED
 
-Please see the new repository for updated code, this wont be updating anymore. 
+Please see the new repository for the COMPLETE and UPDATED code, this wont be updating anymore. 
 New Repo: (https://github.com/ollerjoaco/Trinity-EngineSv)
 
 ## Trinity Engine
